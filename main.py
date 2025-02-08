@@ -2,13 +2,14 @@ import asyncio
 import json
 import signal
 import sys
-from typing import List, Any
+from typing import List, Any, Optional, Dict
 from dotenv import load_dotenv
 import os
 from loguru import logger
 
 from clients.telegram.client import TelegramUserClient
 from clients.discord.client import DiscordClient
+from core.character_manager import CharacterManager
 
 class GracefulExit(SystemExit):
     pass
@@ -57,16 +58,26 @@ class AgentManager:
             self.loop.stop()
         raise GracefulExit()
 
+    def select_character(self) -> Optional[Dict]:
+        """Select a character to use for the agent"""
+        character_manager = CharacterManager()
+        return character_manager.select_character()
+    
     async def start(self):
         self.loop = asyncio.get_running_loop()
         self.setup_signal_handlers()
 
         try:
-            # Load character configuration
-            with open("characters/templates/cryptoshiller.json") as f:
-                character = json.load(f)
+            # Select character
+            character = self.select_character()
+            if not character:
+                logger.error("No character selected. Exiting...")
+                await self.shutdown()
+                return
+                
+            logger.info(f"Selected character: {character['name']}")
 
-            # Initialize clients
+            # Initialize clients based on character configuration
             if "telegram" in character["clients"]:
                 try:
                     self.telegram_client = TelegramUserClient(character=character)
@@ -85,6 +96,7 @@ class AgentManager:
 
             if not self.tasks:
                 logger.error("No clients were initialized successfully")
+                await self.shutdown()
                 return
 
             # Wait for shutdown signal

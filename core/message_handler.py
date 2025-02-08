@@ -1,7 +1,12 @@
 from typing import Dict, Optional
+import os
 from loguru import logger
 from .generation import GenerationManager
 from .marketing_manager import MarketingManager
+
+# Get environment configurations
+ENABLE_DEBUG_LOGS = os.getenv('ENABLE_DEBUG_LOGS', 'false').lower() == 'true'
+ENABLE_REPLIES = os.getenv('ENABLE_REPLIES', 'true').lower() == 'true'
 
 class MessageHandler:
     def __init__(self, character: Dict, generation_manager: GenerationManager):
@@ -12,36 +17,35 @@ class MessageHandler:
         
     def _should_reply(self, message: str) -> bool:
         """Determine if we should reply to this message based on character rules"""
-        try:
-            # Get reply rules from character config
-            rules = self.character.get("reply_rules", {})
-            logger.debug(f"Checking reply rules for message: '{message[:50]}{'...' if len(message) > 50 else ''}' ({len(message)} chars)")
+        if not ENABLE_REPLIES:
+            return False
             
-            # Check keywords to ignore
-            ignore_keywords = rules.get("ignore_keywords", [])
-            if ignore_keywords:
-                for keyword in ignore_keywords:
-                    if keyword.lower() in message.lower():
-                        logger.debug(f"Message contains ignore keyword '{keyword}', skipping")
+        try:
+            # Get rules from character config
+            rules = self.character.get("rules", {}).get("message", {})
+            blocked_terms = self.character.get("rules", {}).get("blocked_terms", [])
+            
+            if ENABLE_DEBUG_LOGS:
+                logger.debug(f"Checking message rules for: '{message[:50]}{'...' if len(message) > 50 else ''}' ({len(message)} chars)")
+            
+            # Check blocked terms
+            if blocked_terms:
+                for term in blocked_terms:
+                    if term.lower() in message.lower():
+                        if ENABLE_DEBUG_LOGS:
+                            logger.debug(f"Message contains blocked term '{term}', skipping")
                         return False
-                
-            # Check required keywords (if any must be present)
-            required_keywords = rules.get("required_keywords", [])
-            if required_keywords:
-                found_keywords = [kw for kw in required_keywords if kw.lower() in message.lower()]
-                if not found_keywords:
-                    logger.debug(f"Message doesn't contain any required keywords {required_keywords}, skipping")
-                    return False
-                logger.debug(f"Found required keywords: {found_keywords}")
                 
             # Check message length limits
             min_length = rules.get("min_length", 0)
             max_length = rules.get("max_length", float('inf'))
             if not (min_length <= len(message) <= max_length):
-                logger.debug(f"Message length ({len(message)} chars) outside bounds [{min_length}, {max_length}], skipping")
+                if ENABLE_DEBUG_LOGS:
+                    logger.debug(f"Message length ({len(message)} chars) outside bounds [{min_length}, {max_length}], skipping")
                 return False
             
-            logger.debug("Message passed all reply rules")
+            if ENABLE_DEBUG_LOGS:
+                logger.debug("Message passed all rules")
             return True
             
         except Exception as e:
@@ -50,29 +54,40 @@ class MessageHandler:
             
     async def _generate_reply(self, message: str) -> Optional[str]:
         """Generate a reply using the LLM based on character template"""
+        if not ENABLE_REPLIES:
+            return None
+            
         try:
             character_name = self.character.get("name", "unknown")
-            logger.debug(f"Generating reply for message: '{message[:50]}{'...' if len(message) > 50 else ''}' ({len(message)} chars)")
+            if ENABLE_DEBUG_LOGS:
+                logger.debug(f"Generating reply for message: '{message[:50]}{'...' if len(message) > 50 else ''}' ({len(message)} chars)")
             
-            # Get reply template from character config
-            template = self.character.get("reply_template", "")
+            # Get reply template and personality
+            template = self.character.get("templates", {}).get("reply", "")
+            personality = self.character.get("personality", {})
+            
             if not template:
-                logger.error(f"No reply template found for character {character_name}")
+                if ENABLE_DEBUG_LOGS:
+                    logger.error(f"No reply template found for character {character_name}")
                 return None
                 
             # Replace placeholders in template
             context = template.replace("{message}", message)
-            context = context.replace("{character_name}", character_name)
-            context = context.replace("{personality}", self.character.get("personality", ""))
-            logger.debug(f"Generated context of {len(context)} chars for LLM")
+            context = context.replace("{traits}", personality.get("traits", ""))
+            context = context.replace("{interests}", personality.get("interests", ""))
+            
+            if ENABLE_DEBUG_LOGS:
+                logger.debug(f"Generated context of {len(context)} chars for LLM")
             
             # Generate response
             response = await self.generation_manager.generate_text(context)
             if response and not response.startswith("[INTERNAL]"):
-                logger.info(f"Generated reply of {len(response)} chars")
+                if ENABLE_DEBUG_LOGS:
+                    logger.info(f"Generated reply of {len(response)} chars")
                 return response
                 
-            logger.error(f"Failed to generate response: {response}")
+            if ENABLE_DEBUG_LOGS:
+                logger.error(f"Failed to generate response: {response}")
             return None
             
         except Exception as e:
@@ -83,7 +98,8 @@ class MessageHandler:
         """Main message handling logic"""
         try:
             character_name = self.character.get("name", "unknown")
-            logger.info(f"[{character_name}] Processing message: '{message[:50]}{'...' if len(message) > 50 else ''}' ({len(message)} chars)")
+            if ENABLE_DEBUG_LOGS:
+                logger.info(f"[{character_name}] Processing message: '{message[:50]}{'...' if len(message) > 50 else ''}' ({len(message)} chars)")
             
             # Record message for marketing manager
             self.marketing_manager.record_message()
@@ -91,17 +107,19 @@ class MessageHandler:
             # First check if we should send a marketing message
             marketing_message = await self.marketing_manager.generate_marketing_message()
             if marketing_message:
-                logger.info(f"[{character_name}] Sending marketing message ({len(marketing_message)} chars)")
+                if ENABLE_DEBUG_LOGS:
+                    logger.info(f"[{character_name}] Sending marketing message ({len(marketing_message)} chars)")
                 return marketing_message
                 
             # If not sending marketing, check if we should reply to this message
             if not self._should_reply(message):
-                logger.debug(f"[{character_name}] Message doesn't meet reply criteria")
+                if ENABLE_DEBUG_LOGS:
+                    logger.debug(f"[{character_name}] Message doesn't meet reply criteria")
                 return None
                 
             # Generate and return reply
             reply = await self._generate_reply(message)
-            if reply:
+            if reply and ENABLE_DEBUG_LOGS:
                 logger.info(f"[{character_name}] Sending reply ({len(reply)} chars)")
             return reply
             
