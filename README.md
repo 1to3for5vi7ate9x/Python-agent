@@ -1,14 +1,16 @@
-# Python Agent Eliza
+# Python Agent
 
-A Python implementation of the Eliza agent system using Telegram and Discord user accounts (not bots).
+A flexible Python-based agent system that can operate on both Telegram and Discord using user accounts (not bots). Features multiple character personalities and LLM integration for natural conversations.
 
 ## Features
 
-- Support for both Telegram and Discord platforms using user accounts
-- Character-based responses using LLM integration
+- Multi-platform support (Telegram and Discord) using user accounts
+- Multiple character personalities with easy customization
+- Character selection at startup
+- LLM integration for natural language generation
+- Environment controls for marketing and debug features
 - Async/await support for concurrent operations
-- Type safety with Pydantic models
-- Advanced logging with Loguru
+- Advanced logging with configurable verbosity
 - Human-like behavior with typing indicators and response delays
 
 ## Requirements
@@ -63,16 +65,34 @@ DISCORD_ALLOWED_CHANNELS=channel_id1,channel_id2
 # TELEGRAM_PROXY_PASSWORD=
 ```
 
-3. Configure your character:
-- Edit or create new character templates in `characters/templates/`
-- Follow the format in `cryptoshiller.json`
+3. Configure environment:
+```env
+# Agent Configuration
+ENABLE_MARKETING=true    # Enable/disable marketing messages
+ENABLE_REPLIES=true      # Enable/disable reply messages
+ENABLE_DEBUG_LOGS=false  # Enable/disable debug logging
 
-4. Run the agent:
+# Ollama Configuration
+OLLAMA_BASE_URL=http://localhost:11434
+OLLAMA_MODEL=llama3.3:latest
+```
+
+4. Configure characters:
+- Edit or create character templates in `characters/templates/`
+- Available templates:
+  - `cryptoshiller.json`: Crypto trading expert
+  - `techsupport.json`: Technical support specialist
+  - `fitnesscoach.json`: Fitness and wellness coach
+- Create new characters by adding JSON files to the templates directory
+
+5. Run the agent:
 ```bash
 python main.py
 ```
 
-On first run, you'll be prompted to enter the verification code sent to your Telegram account.
+On first run:
+1. Select a character from the available options
+2. Enter the verification code sent to your Telegram account
 
 ## Project Structure
 
@@ -83,10 +103,14 @@ python-agent/
 ├── characters/
 │   ├── base.py
 │   └── templates/
-│       └── cryptoshiller.json
+│       ├── cryptoshiller.json
+│       ├── techsupport.json
+│       └── fitnesscoach.json
 ├── core/
 │   ├── generation.py
-│   ├── environment.py
+│   ├── character_manager.py
+│   ├── marketing_manager.py
+│   ├── message_handler.py
 │   └── types.py
 ├── clients/
 │   ├── base.py
@@ -97,6 +121,36 @@ python-agent/
 │       ├── client.py
 │       └── message_manager.py
 └── main.py
+```
+
+## Character Templates
+
+Create new characters by adding JSON files to `characters/templates/` following this structure:
+
+```json
+{
+    "name": "YourCharacterName",
+    "username": "username_bot",
+    "modelProvider": "ollama",
+    "clients": ["telegram", "discord"],
+    
+    "personality": {},
+    "communication": {},
+    
+    "templates": {
+        "reply": "Your character's reply template here: {message}",
+        "marketing": "Your character's marketing message template here"
+    },
+    
+    "rules": {
+        "message": {
+            "min_length": 10,
+            "max_length": 150,
+            "response_chance": 0.6
+        },
+        "blocked_terms": ["spam", "bot", "scam", "fake"]
+    }
+}
 ```
 
 ## Development
