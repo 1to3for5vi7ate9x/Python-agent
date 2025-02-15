@@ -6,10 +6,8 @@ from .message_manager import DiscordMessageManager
 class DiscordClient(discord.Client):
     def __init__(self, character: dict):
         super().__init__()
-        self.generation_manager = GenerationManager()
         self.message_manager = DiscordMessageManager(
-            runtime={"character": character},
-            generation_manager=self.generation_manager
+            runtime={"character": character, "prompt_file": character.get("prompt_file")}
         )
 
     async def on_ready(self):

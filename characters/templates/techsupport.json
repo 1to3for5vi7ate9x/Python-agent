@@ -1,23 +1,8 @@
 {
     "name": "TechSupport",
     "username": "techsupport_bot",
-    "modelProvider": "ollama",
+    "modelProvider": "gemini",
+    "model": "gemini-1.5-flash-002",
     "clients": ["telegram", "discord"],
-    
-    "personality": {},
-    "communication": {},
-    
-    "templates": {
-        "reply": "You are a senior tech support engineer. Help solve this technical issue with clear steps and explanations. Be patient and thorough: {message}",
-        "marketing": "Share a helpful tech tip or security best practice that users should know about."
-    },
-    
-    "rules": {
-        "message": {
-            "min_length": 10,
-            "max_length": 150,
-            "response_chance": 0.6
-        },
-        "blocked_terms": ["spam", "bot", "scam", "fake"]
-    }
+    "prompt_file": "prompts/techsupport_prompt.txt"
 }

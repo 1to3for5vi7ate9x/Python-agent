@@ -1,13 +1,11 @@
 import discord
 from loguru import logger
-from ..base import BaseMessageManager
 from core.message_handler import MessageHandler
 import asyncio
 
-class DiscordMessageManager(BaseMessageManager):
-    def __init__(self, runtime: dict, generation_manager):
-        super().__init__(runtime, generation_manager)
-        self.message_handler = MessageHandler(runtime["character"], generation_manager)
+class DiscordMessageManager:
+    def __init__(self, runtime: dict):
+        self.message_handler = MessageHandler(runtime["prompt_file"], runtime["character"])
         self.client = None
 
     async def _send_with_typing(self, message: discord.Message, content: str) -> None:
@@ -39,7 +37,7 @@ class DiscordMessageManager(BaseMessageManager):
 
         except Exception as e:
             logger.error(f"Error handling Discord message: {e}")
-
+            
     async def send_marketing_message(self, channel_id: int) -> None:
         try:
             # Generate marketing message

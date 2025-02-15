@@ -5,9 +5,9 @@ A flexible Python-based agent system that can operate on both Telegram and Disco
 ## Features
 
 - Multi-platform support (Telegram and Discord) using user accounts
-- Multiple character personalities with easy customization
+- Multiple character personalities defined through prompt files
 - Character selection at startup
-- LLM integration for natural language generation
+- LLM integration (Ollama and Gemini) for natural language generation
 - Environment controls for marketing and debug features
 - Async/await support for concurrent operations
 - Advanced logging with configurable verbosity
@@ -63,6 +63,9 @@ DISCORD_ALLOWED_CHANNELS=channel_id1,channel_id2
 # TELEGRAM_PROXY_PORT=
 # TELEGRAM_PROXY_USERNAME=
 # TELEGRAM_PROXY_PASSWORD=
+
+# Gemini Settings
+GEMINI_API_KEY=your_gemini_api_key  # Replace with your actual Gemini API key
 ```
 
 3. Configure environment:
@@ -72,18 +75,27 @@ ENABLE_MARKETING=true    # Enable/disable marketing messages
 ENABLE_REPLIES=true      # Enable/disable reply messages
 ENABLE_DEBUG_LOGS=false  # Enable/disable debug logging
 
-# Ollama Configuration
-OLLAMA_BASE_URL=http://localhost:11434
-OLLAMA_MODEL=llama3.3:latest
-```
+# Marketing Configuration
+MARKETING_MESSAGE_THRESHOLD=5      # Number of messages before marketing trigger
+MARKETING_TIME_THRESHOLD_HOURS=6.0 # Hours before time-based marketing trigger
+MARKETING_COOLDOWN_HOURS=6.0       # Hours to wait between marketing messages
+MARKETING_RANDOM_CHANCE=0.2        # Probability (0-1) of random marketing trigger
+MARKETING_MAX_LENGTH=500           # Maximum length of marketing messages
 
+# Ollama Configuration (optional if using Gemini)
+OLLAMA_BASE_URL=http://localhost:11434  # Remove if not using Ollama
+OLLAMA_MODEL=llama3.3:latest          # Remove if not using Ollama
+```
 4. Configure characters:
-- Edit or create character templates in `characters/templates/`
+
+- Edit or create character templates in `characters/templates/`.
+- Create corresponding prompt files in `prompts/`.
 - Available templates:
-  - `cryptoshiller.json`: Crypto trading expert
-  - `techsupport.json`: Technical support specialist
-  - `fitnesscoach.json`: Fitness and wellness coach
-- Create new characters by adding JSON files to the templates directory
+    - `cryptoshiller.json`: Crypto trading expert
+    - `techsupport.json`: Technical support specialist
+    - `fitnesscoach.json`: Fitness and wellness coach
+    - `neuronlinkenthusiast.json`: Enthusiastic NeuronLink user
+- Create new characters by adding JSON files to the templates directory and corresponding prompt files to the `prompts/` directory.
 
 5. Run the agent:
 ```bash
@@ -91,8 +103,9 @@ python main.py
 ```
 
 On first run:
-1. Select a character from the available options
-2. Enter the verification code sent to your Telegram account
+
+1.  Select a character from the available options.
+2.  Enter the verification code sent to your Telegram account (if using Telegram).
 
 ## Project Structure
 
@@ -105,7 +118,8 @@ python-agent/
 │   └── templates/
 │       ├── cryptoshiller.json
 │       ├── techsupport.json
-│       └── fitnesscoach.json
+│       ├── fitnesscoach.json
+│       └── neuronlinkenthusiast.json
 ├── core/
 │   ├── generation.py
 │   ├── character_manager.py
@@ -120,52 +134,39 @@ python-agent/
 │   └── discord/
 │       ├── client.py
 │       └── message_manager.py
+├── prompts/
+│   ├── cryptoshiller_prompt.txt
+│   ├── fitnesscoach_prompt.txt
+│   ├── neuronlink_prompt.txt
+│   └── techsupport_prompt.txt
 └── main.py
 ```
+## Character Templates and Prompts
 
-## Character Templates
-
-Create new characters by adding JSON files to `characters/templates/` following this structure:
+Character templates are simplified JSON files in `characters/templates/` that define basic character information and point to a prompt file.  The structure is:
 
 ```json
 {
     "name": "YourCharacterName",
-    "username": "username_bot",
-    "modelProvider": "ollama",
+    "username": "yourcharacter_bot",
+    "modelProvider": "gemini",
+    "model": "gemini-1.5-flash-002",
     "clients": ["telegram", "discord"],
-    
-    "personality": {},
-    "communication": {},
-    
-    "templates": {
-        "reply": "Your character's reply template here: {message}",
-        "marketing": "Your character's marketing message template here"
-    },
-    
-    "rules": {
-        "message": {
-            "min_length": 10,
-            "max_length": 150,
-            "response_chance": 0.6
-        },
-        "blocked_terms": ["spam", "bot", "scam", "fake"]
-    }
+    "prompt_file": "prompts/yourcharacter_prompt.txt"
 }
 ```
 
+Create a corresponding prompt file in the `prompts/` directory. This file should contain a detailed description of the character's persona, communication style, and instructions for the LLM.  See the existing prompt files for examples.
+
 ## Development
 
-- Use Python 3.8 or higher
+- Use Python 3.11 or higher
 - Follow PEP 8 style guide
 - Add type hints for all functions
 - Use async/await for I/O operations
 
 ## Testing
-
-Run tests with pytest:
-```bash
-pytest
-```
+(Testing section to be updated later)
 
 ## License
 

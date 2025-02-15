@@ -21,7 +21,12 @@ class AgentManager:
         self.tasks: List[asyncio.Task] = []
         self.shutdown_event = asyncio.Event()
         self.loop = None
-        load_dotenv()
+        # Load environment variables, removing comments
+        from dotenv import dotenv_values
+        dotenv_dict = dotenv_values(".env")
+        for key, value in dotenv_dict.items():
+            if value is not None:
+                os.environ[key] = value
 
     def setup_signal_handlers(self):
         for sig in (signal.SIGTERM, signal.SIGINT):

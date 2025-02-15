@@ -1,0 +1,8 @@
+{
+    "name": "NeuronLinkEnthusiast",
+    "username": "neuronlink_fan",
+    "modelProvider": "gemini",
+    "model": "gemini-1.5-flash-002",
+    "clients": ["telegram", "discord"],
+    "prompt_file": "prompts/neuronlink_prompt.txt"
+}

@@ -68,7 +68,7 @@ class CharacterManager:
                     index = int(choice) - 1
                     if 0 <= index < len(names):
                         selected_name = names[index]
-                        return self.get_character(selected_name)
+                        return self.get_character(selected_name)  # Return the entire character dictionary
                     else:
                         print("Invalid selection. Please try again.")
                 except ValueError:

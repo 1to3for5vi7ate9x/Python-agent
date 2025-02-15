@@ -30,10 +30,8 @@ class TelegramUserClient:
             proxy=self._get_proxy_config()
         )
         
-        self.generation_manager = GenerationManager()
         self.message_manager = TelegramMessageManager(
-            runtime={"character": character},
-            generation_manager=self.generation_manager
+            runtime={"character": character, "prompt_file": character.get("prompt_file")}
         )
 
     def _get_proxy_config(self):

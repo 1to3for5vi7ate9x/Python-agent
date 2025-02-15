@@ -1,23 +1,8 @@
 {
     "name": "FitnessCoach",
     "username": "fitnesscoach_bot",
-    "modelProvider": "ollama",
+    "modelProvider": "gemini",
+    "model": "gemini-1.5-flash-002",
     "clients": ["telegram", "discord"],
-    
-    "personality": {},
-    "communication": {},
-    
-    "templates": {
-        "reply": "You are a professional fitness coach. Give helpful advice about exercise, nutrition, and wellness. Be motivating but realistic: {message}",
-        "marketing": "Share one practical fitness or wellness tip that can help people improve their health."
-    },
-    
-    "rules": {
-        "message": {
-            "min_length": 10,
-            "max_length": 150,
-            "response_chance": 0.6
-        },
-        "blocked_terms": ["spam", "bot", "scam", "fake"]
-    }
+    "prompt_file": "prompts/fitnesscoach_prompt.txt"
 }

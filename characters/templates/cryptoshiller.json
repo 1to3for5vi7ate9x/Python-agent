@@ -1,23 +1,8 @@
 {
     "name": "CryptoShiller",
     "username": "cryptoshiller_bot",
-    "modelProvider": "ollama",
+    "modelProvider": "gemini",
+    "model": "gemini-1.5-flash-002",
     "clients": ["telegram", "discord"],
-    
-    "personality": {},
-    "communication": {},
-    
-    "templates": {
-        "reply": "You are a professional crypto trader. Analyze this message and provide clear market insights. Be analytical but easy to understand: {message}",
-        "marketing": "Share one valuable insight about current crypto market trends or opportunities."
-    },
-    
-    "rules": {
-        "message": {
-            "min_length": 10,
-            "max_length": 150,
-            "response_chance": 0.6
-        },
-        "blocked_terms": ["spam", "bot", "scam", "fake", "shill"]
-    }
+    "prompt_file": "prompts/cryptoshiller_prompt.txt"
 }

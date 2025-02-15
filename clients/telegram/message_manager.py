@@ -1,13 +1,16 @@
 from telethon import events
 from loguru import logger
-from ..base import BaseMessageManager
 from core.message_handler import MessageHandler
 import asyncio
+import json
+import os
+from datetime import datetime
 
-class TelegramMessageManager(BaseMessageManager):
-    def __init__(self, runtime: dict, generation_manager):
-        super().__init__(runtime, generation_manager)
-        self.message_handler = MessageHandler(runtime["character"], generation_manager)
+class TelegramMessageManager:
+    def __init__(self, runtime: dict):
+        self.message_handler = MessageHandler(runtime["prompt_file"], runtime["character"])
+        os.makedirs('logs', exist_ok=True)
+        self.log_file = open('logs/telegram_log.json', 'a')
 
     async def _send_with_typing(self, event, message: str) -> None:
         """Send a message with typing animation"""
@@ -35,6 +38,7 @@ class TelegramMessageManager(BaseMessageManager):
             response = await self.message_handler.handle_message(message)
             if response and not response.startswith("Error:"):
                 await self._send_with_typing(event, response)
+                self.log_reply(message, response)
 
         except Exception as e:
             logger.error(f"Error handling Telegram message: {e}")
@@ -53,3 +57,19 @@ class TelegramMessageManager(BaseMessageManager):
                     logger.info(f"Sent marketing message to chat {chat_id}")
         except Exception as e:
             logger.error(f"Error sending marketing message: {e}")
+
+    def log_reply(self, original_message: str, reply: str):
+        """Log the original message and the reply to a JSON file."""
+        try:
+            log_entry = {
+                'timestamp': datetime.now().isoformat(),
+                'original_message': original_message,
+                'reply': reply
+            }
+            self.log_file.write(json.dumps(log_entry) + '\\n')
+            self.log_file.flush()
+        except Exception as e:
+            logger.error(f"Error logging reply: {e}")
+
+    def __del__(self):
+        self.log_file.close()
