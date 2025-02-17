@@ -17,7 +17,7 @@ class GeminiGenerationManager:
         self.default_model = default_model
         self.model = genai.GenerativeModel(self.default_model)
         self.last_request_time = 0
-        self.rate_limit_delay = 2  # seconds
+        self.rate_limit_delay = 30  # seconds (2 RPM)
         logger.info(f"Initializing GeminiGenerationManager with default model: {self.default_model}")
 
     async def generate_text(self, context: str, model: str = None, personality: str = "") -> str:
@@ -149,9 +149,10 @@ class OllamaGenerationManager:
             logger.error(f"Unexpected error listing models: {str(e)}")
             return []
 
-    async def generate_text(self, context: str, model: str = None) -> str:
+    async def generate_text(self, context: str, model: str = None, personality: str = "") -> str:
         """Generate text using the specified model"""
         try:
+            # TODO: Incorporate personality into Ollama generation if supported by the model
             # First check server connection
             logger.debug("Starting text generation process")
             if not await self._check_server_connection():

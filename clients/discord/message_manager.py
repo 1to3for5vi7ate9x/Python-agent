@@ -21,6 +21,11 @@ class DiscordMessageManager:
 
     async def handle_message(self, message: discord.Message) -> None:
         try:
+            # Check if the message is from an allowed channel
+            allowed_channel_ids = "1301754237411262485,1128867684130508875".split(",")  # From .env
+            if str(message.channel.id) not in allowed_channel_ids:
+                return
+
             # Don't respond to our own messages
             if message.author.bot:
                 return

@@ -121,6 +121,29 @@ Reply:"""
             # Record message for marketing manager
             self.marketing_manager.record_message()
 
+            # Model selection logic
+            model_provider = self.character.get("modelProvider", "ollama")  # Default
+            if message.startswith("!ollama"):
+                model_provider = "ollama"
+                message = message[len("!ollama"):].strip()  # Remove the command
+            elif message.startswith("!gemini"):
+                model_provider = "gemini"
+                message = message[len("!gemini"):].strip()  # Remove the command
+
+            # Re-initialize GenerationManager if model provider changed
+            if model_provider != self.generation_manager.model_provider:
+                base_url = self.character.get("baseUrl")  # Optional, only for Ollama
+                default_model = self.character.get("model")
+                api_key = os.getenv("GEMINI_API_KEY") if model_provider == "gemini" else None
+
+                self.generation_manager = GenerationManager(
+                    model_provider=model_provider,
+                    base_url=base_url,
+                    default_model=default_model,
+                    api_key=api_key,
+                )
+                logger.info(f"Switched to model provider: {model_provider}")
+
             # First check if we should send a marketing message
             marketing_message = await self.marketing_manager.generate_marketing_message()
             if marketing_message:
