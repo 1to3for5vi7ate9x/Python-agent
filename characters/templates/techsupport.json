@@ -1,8 +1,8 @@
 {
     "name": "TechSupport",
     "username": "techsupport_bot",
-    "modelProvider": "ollama",
-    "model": "llama3.2:3b",
+    "modelProvider": "gemini",
+    "model": "gemini-2.0-flash-exp",
     "clients": ["telegram", "discord"],
     "prompt_file": "prompts/techsupport_prompt.txt"
 }

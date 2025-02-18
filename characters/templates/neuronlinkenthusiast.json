@@ -1,8 +1,8 @@
 {
     "name": "NeuronLinkEnthusiast",
     "username": "neuronlink_fan",
-    "modelProvider": "gemini",
-    "model": "gemini-2.0-flash-exp",
+    "modelProvider": "ollama",
+    "model": "llama3.2:3b",
     "clients": ["telegram", "discord"],
     "prompt_file": "prompts/neuronlink_prompt.txt"
 }

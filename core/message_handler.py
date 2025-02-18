@@ -39,12 +39,14 @@ class MessageHandler:
     async def _is_relevant(self, message: str) -> bool:
         """Determine if the message is relevant based on the prompt."""
         try:
+            # Use the entire conversation history for context
             prompt = f"""
 {self.prompt_content}
 
-Message: '{message}'
+Conversation History:
+{message}
 
-Based on the provided context, is this message relevant and should receive a reply? Answer with 'yes' or 'no'.
+Based on the conversation history, is the latest message relevant and should the bot respond? Answer with 'yes' or 'no'.
 """
             response = await self.generation_manager.generate_text(prompt, personality="")
             if response.startswith("[INTERNAL]"):
@@ -52,7 +54,7 @@ Based on the provided context, is this message relevant and should receive a rep
                 return False
 
             normalized_response = response.strip().lower()
-            logger.info(f"The message '{message}' relevance is {normalized_response}")
+            logger.info(f"The message '{message.split('User: ')[-1]}' relevance is {normalized_response}")
             return "yes" in normalized_response
 
         except Exception as e:
@@ -72,7 +74,10 @@ Based on the provided context, is this message relevant and should receive a rep
 
             if ENABLE_DEBUG_LOGS:
                 logger.debug("Message is relevant")
-            return True
+
+            # Add a probability check for replying (e.g., 85% chance)
+            import random
+            return random.random() < 0.99  # 99% chance of replying
 
         except Exception as e:
             logger.error(f"Error in _should_reply: {e}")
@@ -90,7 +95,7 @@ Based on the provided context, is this message relevant and should receive a rep
             prompt = f"""
 {self.prompt_content}
 
-Message: '{message}'
+{message}
 
 Reply:"""
 
@@ -144,24 +149,27 @@ Reply:"""
                 )
                 logger.info(f"Switched to model provider: {model_provider}")
 
-            # First check if we should send a marketing message
-            marketing_message = await self.marketing_manager.generate_marketing_message()
-            if marketing_message:
-                if ENABLE_DEBUG_LOGS:
-                    logger.info(f"[{character_name}] Sending marketing message ({len(marketing_message)} chars)")
-                return marketing_message
-
-            # If not sending marketing, check if we should reply to this message
+            # Check if we should reply to this message
             if not await self._should_reply(message):
                 if ENABLE_DEBUG_LOGS:
                     logger.debug(f"[{character_name}] Message doesn't meet reply criteria")
                 return None
 
-            # Generate and return reply
+            # Generate reply
             reply = await self._generate_reply(message)
             if reply and ENABLE_DEBUG_LOGS:
                 logger.info(f"[{character_name}] Sending reply ({len(reply)} chars)")
-            return reply
+
+                # After a successful reply, check if we should send a marketing message
+                marketing_message = await self.marketing_manager.generate_marketing_message()
+                if marketing_message:
+                    if ENABLE_DEBUG_LOGS:
+                        logger.info(f"[{character_name}] Sending marketing message after reply ({len(marketing_message)} chars)")
+                    return f"{reply}\n\n{marketing_message}"  # Combine reply and marketing
+
+                return reply
+
+            return None # No reply generated
 
         except Exception as e:
             logger.error(f"Error in handle_message: {e}")
