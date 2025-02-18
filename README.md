@@ -171,3 +171,11 @@ Create a corresponding prompt file in the `prompts/` directory. This file should
 ## License
 
 MIT License
+
+## Improvements (main-improved branch)
+
+- **Improved Contextual Relevance:** The bot now uses the entire conversation history to determine message relevance, resulting in more accurate and appropriate responses.
+- **Reduced Reply Frequency:** A probability check has been added to prevent the bot from replying to every message, creating a more natural interaction pattern.
+- **Prioritized Helpful Interactions:** Marketing messages are now only sent *after* the bot has provided a helpful response, ensuring value is delivered first.
+- **Fixed Discord Channel Monitoring:** Resolved an issue where the bot was not monitoring the correct Discord channels due to hardcoded channel IDs.
+- **Discord Slow Mode:** The bot is expected to handle Discord's slow mode automatically due to the underlying `discord.py` library's rate limit handling.
