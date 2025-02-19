@@ -8,7 +8,6 @@ from datetime import datetime
 
 class TelegramMessageManager:
     def __init__(self, runtime: dict):
-        self.message_handler = MessageHandler(runtime["prompt_file"], runtime["character"])
         os.makedirs('logs', exist_ok=True)
         self.log_file = open('logs/telegram_log.json', 'a')
         self.conversations = {}  # Store conversation history: {chat_id: [messages]}
@@ -55,21 +54,6 @@ class TelegramMessageManager:
 
         except Exception as e:
             logger.error(f"Error handling Telegram message: {e}")
-
-    async def send_marketing_message(self, chat_id: int) -> None:
-        try:
-            # Generate marketing message
-            message = await self.message_handler.marketing_manager.generate_marketing_message()
-
-            if message and not message.startswith("Error:") and hasattr(self, 'client'):
-                async with self.client.action(chat_id, 'typing'):
-                    # Simulate typing (50ms per character, max 10 seconds)
-                    typing_duration = min(len(message) * 0.05, 10)
-                    await asyncio.sleep(typing_duration)
-                    await self.client.send_message(chat_id, message)
-                    logger.info(f"Sent marketing message to chat {chat_id}")
-        except Exception as e:
-            logger.error(f"Error sending marketing message: {e}")
 
     def log_reply(self, original_message: str, reply: str):
         """Log the original message and the reply to a JSON file."""

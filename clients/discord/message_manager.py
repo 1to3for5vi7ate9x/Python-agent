@@ -8,7 +8,6 @@ from dotenv import load_dotenv
 
 class DiscordMessageManager:
     def __init__(self, runtime: dict):
-        self.message_handler = MessageHandler(runtime["prompt_file"], runtime["character"])
         self.client = None
         self.conversations = {}  # Store conversation history: {user_id: [messages]}
 
@@ -33,10 +32,6 @@ class DiscordMessageManager:
             # Check if the message is from an allowed channel
             allowed_channel_ids = os.getenv("DISCORD_ALLOWED_CHANNELS", "").split(",")
             if str(message.channel.id) not in allowed_channel_ids:
-                return
-
-            # Don't respond to our own messages if replies are disabled
-            if os.getenv('ENABLE_REPLIES', 'true').lower() == 'false':
                 return
 
             if message.author.bot:

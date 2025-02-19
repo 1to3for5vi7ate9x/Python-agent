@@ -8,7 +8,6 @@ from dotenv import load_dotenv
 
 # Get environment configurations
 ENABLE_DEBUG_LOGS = os.getenv('ENABLE_DEBUG_LOGS', 'false').lower() == 'true'
-ENABLE_REPLIES = os.getenv('ENABLE_REPLIES', 'true').lower() == 'true'
 load_dotenv(override=True)
 MIN_MESSAGES = int(os.getenv('MIN_MESSAGES'))
 MIN_TIME = int(os.getenv('MIN_TIME'))
@@ -77,8 +76,6 @@ Based on the conversation history, is the latest message relevant and should the
 
     async def _should_reply(self, channel_id: str, message: str) -> bool:
         """Determine if we should reply to this message."""
-        if not ENABLE_REPLIES:
-            return False
 
         channel_id = str(channel_id)
 
@@ -119,8 +116,6 @@ Based on the conversation history, is the latest message relevant and should the
 
     async def _generate_reply(self, message: str) -> Optional[str]:
         """Generate a reply using the LLM based on the prompt."""
-        if not ENABLE_REPLIES:
-            return None
 
         try:
             if ENABLE_DEBUG_LOGS:
