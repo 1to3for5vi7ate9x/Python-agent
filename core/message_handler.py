@@ -75,9 +75,7 @@ Based on the conversation history, is the latest message relevant and should the
             if ENABLE_DEBUG_LOGS:
                 logger.debug("Message is relevant")
 
-            # Add a probability check for replying (e.g., 85% chance)
-            import random
-            return random.random() < 0.99  # 99% chance of replying
+            return True
 
         except Exception as e:
             logger.error(f"Error in _should_reply: {e}")
@@ -157,8 +155,9 @@ Reply:"""
 
             # Generate reply
             reply = await self._generate_reply(message)
-            if reply and ENABLE_DEBUG_LOGS:
-                logger.info(f"[{character_name}] Sending reply ({len(reply)} chars)")
+            if reply:
+                if ENABLE_DEBUG_LOGS:
+                    logger.info(f"[{character_name}] Sending reply ({len(reply)} chars)")
 
                 # After a successful reply, check if we should send a marketing message
                 marketing_message = await self.marketing_manager.generate_marketing_message()
@@ -169,7 +168,7 @@ Reply:"""
 
                 return reply
 
-            return None # No reply generated
+            return None  # No reply generated
 
         except Exception as e:
             logger.error(f"Error in handle_message: {e}")
