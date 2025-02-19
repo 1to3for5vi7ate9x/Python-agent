@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 from core.generation import GenerationManager
 import time
 from datetime import datetime, timedelta
-from typing import Optional
+from typing import Optional, Dict
 
 
 class DiscordMessageManager:
@@ -32,8 +32,10 @@ class DiscordMessageManager:
         )
         logger.info(f"Initialized DiscordMessageManager using prompt file: {self.prompt_file}")
 
-        # Channel-specific state: {channel_id: {last_message_time: timestamp, message_count: int}}
+        # Channel-specific state: {channel_id: {last_message_time: timestamp, message_count: int, lock: asyncio.Lock}}
         self.channel_state = {}
+        self.locks: Dict[str, asyncio.Lock] = {}  # Add a dictionary for locks
+
 
     def load_prompt(self) -> str:
         """Load the content of the prompt file."""
@@ -73,15 +75,16 @@ Based on the conversation history, is the latest message relevant and should the
         except Exception as e:
             logger.error(f"Error in _is_relevant: {e}")
             return False
-    
+        
     async def _should_reply(self, channel_id: str, message: str) -> bool:
         """Determine if we should reply to this message."""
 
         channel_id = str(channel_id)
 
-        # Initialize channel state if not present
+        # Initialize channel state and lock if not present
         if channel_id not in self.channel_state:
             self.channel_state[channel_id] = {"last_message_time": None, "message_count": 0}
+            self.locks[channel_id] = asyncio.Lock()  # Create a lock for the channel
 
         state = self.channel_state[channel_id]
 
@@ -178,17 +181,25 @@ Reply:"""
             
             channel_id = str(message.channel.id)
             ENABLE_DEBUG_LOGS = os.getenv('ENABLE_DEBUG_LOGS', 'false').lower() == 'true'
-            # Check if we should reply to this message
-            if not await self._should_reply(channel_id, conversation_history):
-                return
 
-            # Generate reply
-            response = await self._generate_reply(conversation_history)
-            if response and not response.startswith("Error:"):
-                self.conversations[user_id].append(f"Bot: {response}")  # Add bot response to history
-                await self._send_with_typing(message, response)
-                # Reset message count and update last message time
-                self.channel_state[channel_id] = {"last_message_time": datetime.utcnow(), "message_count": 0}
+            # Acquire the lock for the channel
+            if channel_id not in self.locks:
+                self.locks[channel_id] = asyncio.Lock()
+            logger.debug(f"[Discord] Attempting to acquire lock for channel {channel_id}")  # Added logging
+            async with self.locks[channel_id]:
+                logger.debug(f"[Discord] Acquired lock for channel {channel_id}")  # Added logging
+                # Check if we should reply to this message
+                if not await self._should_reply(channel_id, conversation_history):
+                    return
+
+                # Generate reply
+                response = await self._generate_reply(conversation_history)
+                if response and not response.startswith("Error:"):
+                    self.conversations[user_id].append(f"Bot: {response}")  # Add bot response to history
+                    await self._send_with_typing(message, response)
+                    # Reset message count and update last message time
+                    self.channel_state[channel_id] = {"last_message_time": datetime.utcnow(), "message_count": 0}
+            logger.debug(f"[Discord] Releasing lock for channel {channel_id}")  # Added logging
 
         except Exception as e:
             logger.error(f"Error handling Discord message: {e}")

@@ -5,6 +5,7 @@ from .generation import GenerationManager
 import time
 from datetime import datetime, timedelta
 from dotenv import load_dotenv
+import asyncio  # Import asyncio
 
 # Get environment configurations
 ENABLE_DEBUG_LOGS = os.getenv('ENABLE_DEBUG_LOGS', 'false').lower() == 'true'
@@ -32,8 +33,10 @@ class MessageHandler:
         )
         logger.info(f"Initialized MessageHandler using prompt file: {self.prompt_file}")
 
-        # Channel-specific state: {channel_id: {last_message_time: timestamp, message_count: int}}
+        # Channel-specific state: {channel_id: {last_message_time: timestamp, message_count: int, lock: asyncio.Lock}}
         self.channel_state = {}
+        self.locks: Dict[str, asyncio.Lock] = {}  # Add a dictionary for locks
+
 
     def load_prompt(self) -> str:
         """Load the content of the prompt file."""
@@ -79,9 +82,10 @@ Based on the conversation history, is the latest message relevant and should the
 
         channel_id = str(channel_id)
 
-        # Initialize channel state if not present
+        # Initialize channel state and lock if not present
         if channel_id not in self.channel_state:
             self.channel_state[channel_id] = {"last_message_time": None, "message_count": 0}
+            self.locks[channel_id] = asyncio.Lock()  # Create a lock for the channel
 
         state = self.channel_state[channel_id]
 
@@ -164,15 +168,15 @@ Reply:"""
 
             message = history
 
-            # Model selection logic (This part might need adjustments depending on how commands are handled)
+            # Model selection logic
             model_provider = os.getenv("MODEL_PROVIDER", "ollama")
-            if message.startswith("!ollama"):  # Check if this logic is still needed
+            if message.startswith("!ollama"):
                 model_provider = "ollama"
-                message = message[len("!ollama"):].strip()  # Remove the command
+                message = message[len("!ollama"):].strip()
 
             # Re-initialize GenerationManager if model provider changed
             if model_provider != self.generation_manager.model_provider:
-                base_url = self.character.get("baseUrl")  # Optional, only for Ollama
+                base_url = self.character.get("baseUrl")
                 default_model = os.getenv("OLLAMA_MODEL")
                 self.generation_manager = GenerationManager(
                     model_provider=model_provider,
@@ -181,20 +185,26 @@ Reply:"""
                 )
                 logger.info(f"Switched to model provider: {model_provider}")
 
+            # Acquire the lock for the channel
+            if channel_id not in self.locks:
+                self.locks[channel_id] = asyncio.Lock()
+            logger.debug(f"[{character_name}] Attempting to acquire lock for channel {channel_id}")  # Added logging
+            async with self.locks[channel_id]:
+                logger.debug(f"[{character_name}] Acquired lock for channel {channel_id}")  # Added logging
+                # Check if we should reply to this message
+                if not await self._should_reply(channel_id, message):
+                    if ENABLE_DEBUG_LOGS:
+                        logger.debug(f"[{character_name}] Message doesn't meet reply criteria")
+                    return None
 
-            # Check if we should reply to this message
-            if not await self._should_reply(channel_id, message):
-                if ENABLE_DEBUG_LOGS:
-                    logger.debug(f"[{character_name}] Message doesn't meet reply criteria")
-                return None
-
-            # Generate reply
-            reply = await self._generate_reply(message)
-            if reply:
-                logger.info(f"[{character_name}] Sending reply ({len(reply)} chars)")
-                # Reset message count and update last message time
-                self.channel_state[channel_id] = {"last_message_time": datetime.utcnow(), "message_count": 0}
-                return reply
+                # Generate reply
+                reply = await self._generate_reply(message)
+                if reply:
+                    logger.info(f"[{character_name}] Sending reply ({len(reply)} chars)")
+                    # Reset message count and update last message time
+                    self.channel_state[channel_id] = {"last_message_time": datetime.utcnow(), "message_count": 0}
+                    return reply
+                logger.debug(f"[{character_name}] Releasing lock for channel {channel_id}") # Added logging
 
             return None  # No reply generated
 
