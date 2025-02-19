@@ -1,8 +1,0 @@
-{
-    "name": "CryptoShiller",
-    "username": "cryptoshiller_bot",
-    "modelProvider": "gemini",
-    "model": "gemini-2.0-flash-exp",
-    "clients": ["telegram", "discord"],
-    "prompt_file": "prompts/cryptoshiller_prompt.txt"
-}

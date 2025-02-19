@@ -1,8 +1,0 @@
-{
-    "name": "TechSupport",
-    "username": "techsupport_bot",
-    "modelProvider": "gemini",
-    "model": "gemini-2.0-flash-exp",
-    "clients": ["telegram", "discord"],
-    "prompt_file": "prompts/techsupport_prompt.txt"
-}

@@ -59,29 +59,10 @@ class DiscordMessageManager:
             conversation_history = "\\n".join(self.conversations[user_id])
 
             # Get response from message handler, passing conversation history
-            response = await self.message_handler.handle_message(conversation_history)
+            response = await self.message_handler.handle_message(message, conversation_history)
             if response and not response.startswith("Error:"):
                 self.conversations[user_id].append(f"Bot: {response}")  # Add bot response to history
                 await self._send_with_typing(message, response)
 
         except Exception as e:
             logger.error(f"Error handling Discord message: {e}")
-
-    async def send_marketing_message(self, channel_id: int) -> None:
-        try:
-            # Generate marketing message
-            message = await self.message_handler.marketing_manager.generate_marketing_message()
-            
-            if message and not message.startswith("Error:") and self.client:
-                channel = self.client.get_channel(channel_id)
-                if channel:
-                    async with channel.typing():
-                        # Simulate typing (50ms per character, max 10 seconds)
-                        typing_duration = min(len(message) * 0.05, 10)
-                        await asyncio.sleep(typing_duration)
-                        await channel.send(message)
-                        logger.info(f"Sent marketing message to channel {channel_id}")
-                else:
-                    logger.error(f"Could not find channel {channel_id}")
-        except Exception as e:
-            logger.error(f"Error sending marketing message: {e}")

@@ -11,6 +11,7 @@ class TelegramMessageManager:
         self.message_handler = MessageHandler(runtime["prompt_file"], runtime["character"])
         os.makedirs('logs', exist_ok=True)
         self.log_file = open('logs/telegram_log.json', 'a')
+        self.conversations = {}  # Store conversation history: {chat_id: [messages]}
 
     async def _send_with_typing(self, event, message: str) -> None:
         """Send a message with typing animation"""
@@ -30,15 +31,27 @@ class TelegramMessageManager:
                 return
 
             # Get the message text
-            message = event.message.text
-            if not message:
+            message_text = event.message.text
+            if not message_text:
                 return
 
+            # Get the chat ID
+            chat_id = str(event.chat_id)
+
+            # Update conversation history
+            if chat_id not in self.conversations:
+                self.conversations[chat_id] = []
+            self.conversations[chat_id].append(f"User: {message_text}")
+
+            # Get conversation history
+            conversation_history = "\\n".join(self.conversations[chat_id])
+
             # Get response from message handler
-            response = await self.message_handler.handle_message(message)
+            response = await self.message_handler.handle_message(event, conversation_history)
             if response and not response.startswith("Error:"):
+                self.conversations[chat_id].append(f"Bot: {response}")  # Add bot response to history
                 await self._send_with_typing(event, response)
-                self.log_reply(message, response)
+                self.log_reply(message_text, response)
 
         except Exception as e:
             logger.error(f"Error handling Telegram message: {e}")
@@ -47,7 +60,7 @@ class TelegramMessageManager:
         try:
             # Generate marketing message
             message = await self.message_handler.marketing_manager.generate_marketing_message()
-            
+
             if message and not message.startswith("Error:") and hasattr(self, 'client'):
                 async with self.client.action(chat_id, 'typing'):
                     # Simulate typing (50ms per character, max 10 seconds)

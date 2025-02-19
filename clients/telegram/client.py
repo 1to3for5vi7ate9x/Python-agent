@@ -26,26 +26,12 @@ class TelegramUserClient:
         self.client = TelegramClient(
             session_path,
             self.api_id,
-            self.api_hash,
-            proxy=self._get_proxy_config()
+            self.api_hash
         )
         
         self.message_manager = TelegramMessageManager(
             runtime={"character": character, "prompt_file": character.get("prompt_file")}
         )
-
-    def _get_proxy_config(self):
-        host = os.getenv('TELEGRAM_PROXY_HOST')
-        if not host:
-            return None
-            
-        return {
-            'proxy_type': 'socks5',
-            'addr': host,
-            'port': int(os.getenv('TELEGRAM_PROXY_PORT', '1080')),
-            'username': os.getenv('TELEGRAM_PROXY_USERNAME'),
-            'password': os.getenv('TELEGRAM_PROXY_PASSWORD')
-        }
 
     async def _resolve_allowed_chats(self):
         async for dialog in self.client.iter_dialogs():
