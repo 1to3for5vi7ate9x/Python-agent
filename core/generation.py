@@ -113,10 +113,10 @@ class OllamaGenerationManager:
                     "prompt": context,
                     "stream": False,
                     "options": {
-                        "temperature": 0.7,
-                        "top_p": 0.9,
-                        "top_k": 40,
-                        "num_predict": 100,
+                        "temperature": float(os.getenv("OLLAMA_TEMPERATURE", "0.7")),
+                        "top_p": float(os.getenv("OLLAMA_TOP_P", "0.9")),
+                        "top_k": int(os.getenv("OLLAMA_TOP_K", "40")),
+                        "num_predict": int(os.getenv("OLLAMA_NUM_PREDICT", "100")),
                     }
                 }
             )

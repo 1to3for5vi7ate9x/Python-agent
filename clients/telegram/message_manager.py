@@ -15,7 +15,12 @@ class TelegramMessageManager:
         self.log_file = open('logs/telegram_log.json', 'a')
         self.conversations = {}  # Store conversation history: {chat_id: [messages]}
         self.prompt_file = runtime["prompt_file"]
-        self.message_handler = MessageHandler(prompt_file=self.prompt_file, character={})
+        self.relevance_prompt_file = "prompts/relevance/relevance_prompt.txt"  # Path to the relevance prompt
+        self.message_handler = MessageHandler(
+            prompt_file=self.prompt_file,
+            character={},
+            relevance_prompt_file=self.relevance_prompt_file
+        )
 
     async def _send_with_typing(self, event, message: str) -> None:
         """Send a message with typing animation"""

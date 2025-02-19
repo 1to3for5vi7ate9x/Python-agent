@@ -14,12 +14,14 @@ MIN_MESSAGES = int(os.getenv('MIN_MESSAGES'))
 MIN_TIME = int(os.getenv('MIN_TIME'))
 
 class MessageHandler:
-    def __init__(self, prompt_file: str, character: Dict):
+    def __init__(self, prompt_file: str, character: Dict, relevance_prompt_file: str = "prompts/relevance/relevance_prompt.txt"):
         self.prompt_file = prompt_file
+        self.relevance_prompt_file = relevance_prompt_file
         self.min_messages = MIN_MESSAGES
         self.min_time = MIN_TIME
         self.minus_time = int(os.getenv('MINUS_TIME', '0'))  # Default to 0 if not set
         self.prompt_content = self.load_prompt()
+        self.relevance_prompt_content = self.load_relevance_prompt()
         self.character = character
         ollama_model = os.getenv("OLLAMA_MODEL")
         model_provider = os.getenv("MODEL_PROVIDER", "ollama")
@@ -31,7 +33,7 @@ class MessageHandler:
             base_url=base_url,
             default_model=default_model,
         )
-        logger.info(f"Initialized MessageHandler using prompt file: {self.prompt_file}")
+        logger.info(f"Initialized MessageHandler using prompt file: {self.prompt_file} and relevance prompt file: {self.relevance_prompt_file}")
 
         # Channel-specific state: {channel_id: {last_message_time: timestamp, message_count: int, lock: asyncio.Lock}}
         self.channel_state = {}
@@ -47,12 +49,21 @@ class MessageHandler:
             logger.error(f"Error loading prompt file: {e}")
             return ""
 
+    def load_relevance_prompt(self) -> str:
+        """Load the content of the relevance prompt file."""
+        try:
+            with open(self.relevance_prompt_file, 'r') as f:
+                return f.read()
+        except Exception as e:
+            logger.error(f"Error loading relevance prompt file: {e}")
+            return ""
+
     async def _is_relevant(self, message: str) -> bool:
         """Determine if the message is relevant based on the prompt."""
         try:
             # Use the entire conversation history for context
             prompt = f"""
-{self.prompt_content}
+{self.relevance_prompt_content}
 
 Conversation History:
 {message}
@@ -71,7 +82,7 @@ Based on the conversation history, is the latest message relevant and should the
             except (IndexError, ValueError):
                 last_message = message  # Fallback to the entire history if extraction fails
             logger.info(f"The message '{last_message}' relevance is {normalized_response}")
-            return "yes" in normalized_response
+            return normalized_response.startswith("answer: yes")
 
         except Exception as e:
             logger.error(f"Error in _is_relevant: {e}")
