@@ -36,6 +36,13 @@ class DiscordMessageManager:
         self.channel_state = {}
         self.locks: Dict[str, asyncio.Lock] = {}  # Add a dictionary for locks
 
+        # Set log level based on environment variable
+        logger.remove()  # Remove default handler
+        if os.getenv('ENABLE_DEBUG_LOGS', 'false').lower() == 'true':
+            logger.add(lambda msg: print(msg), level="DEBUG") # Add this to see all logs in console
+        else:
+            logger.add(lambda msg: print(msg), level="INFO")  # Add a handler with INFO level
+
 
     def load_prompt(self) -> str:
         """Load the content of the prompt file."""
