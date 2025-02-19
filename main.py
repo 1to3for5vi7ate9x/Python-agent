@@ -83,13 +83,16 @@ class AgentManager:
             logger.info(f"Selected character: {character['name']}")
 
             # Initialize clients based on character configuration
-            if "telegram" in character["clients"]:
-                try:
-                    self.telegram_client = TelegramUserClient(character=character)
-                    self.tasks.append(asyncio.create_task(self.telegram_client.start()))
-                    logger.info("Telegram user client initialized")
-                except Exception as e:
-                    logger.error(f"Failed to initialize Telegram client: {e}")
+            if os.getenv('ENABLE_TELEGRAM', 'false').lower() == 'true':
+                if "telegram" in character["clients"]:
+                    try:
+                        self.telegram_client = TelegramUserClient(character=character)
+                        self.tasks.append(asyncio.create_task(self.telegram_client.start()))
+                        logger.info("Telegram user client initialized")
+                    except Exception as e:
+                        logger.error(f"Failed to initialize Telegram client: {e}")
+            else:
+                logger.info("Telegram client is disabled via environment variable.")
 
             if "discord" in character["clients"]:
                 try:
