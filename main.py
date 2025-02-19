@@ -6,21 +6,22 @@ from typing import List, Any, Optional, Dict
 from dotenv import load_dotenv
 import os
 from loguru import logger
+import argparse
 
 from clients.telegram.client import TelegramUserClient
 from clients.discord.client import DiscordClient
-from core.character_manager import CharacterManager
 
 class GracefulExit(SystemExit):
     pass
 
 class AgentManager:
-    def __init__(self):
+    def __init__(self, prompt_file: str = None):
         self.telegram_client = None
         self.discord_client = None
         self.tasks: List[asyncio.Task] = []
         self.shutdown_event = asyncio.Event()
         self.loop = None
+        self.prompt_file = prompt_file
         # Load environment variables, removing comments
         from dotenv import dotenv_values
         dotenv_dict = dotenv_values(".env")
@@ -63,40 +64,25 @@ class AgentManager:
             self.loop.stop()
         raise GracefulExit()
 
-    def select_character(self) -> Optional[Dict]:
-        """Select a character to use for the agent"""
-        character_manager = CharacterManager()
-        return character_manager.select_character()
-    
     async def start(self):
         self.loop = asyncio.get_running_loop()
         self.setup_signal_handlers()
 
         try:
-            # Select character
-            character = self.select_character()
-            if not character:
-                logger.error("No character selected. Exiting...")
-                await self.shutdown()
-                return
-                
-            logger.info(f"Selected character: {character['name']}")
-
-            # Initialize clients based on character configuration
+            # Initialize clients based on environment variables
             if os.getenv('ENABLE_TELEGRAM', 'false').lower() == 'true':
-                if "telegram" in character["clients"]:
-                    try:
-                        self.telegram_client = TelegramUserClient(character=character)
-                        self.tasks.append(asyncio.create_task(self.telegram_client.start()))
-                        logger.info("Telegram user client initialized")
-                    except Exception as e:
-                        logger.error(f"Failed to initialize Telegram client: {e}")
+                try:
+                    self.telegram_client = TelegramUserClient(prompt_file=self.prompt_file)
+                    self.tasks.append(asyncio.create_task(self.telegram_client.start()))
+                    logger.info("Telegram user client initialized")
+                except Exception as e:
+                    logger.error(f"Failed to initialize Telegram client: {e}")
             else:
                 logger.info("Telegram client is disabled via environment variable.")
 
-            if "discord" in character["clients"]:
+            if os.getenv("DISCORD_TOKEN"):
                 try:
-                    self.discord_client = DiscordClient(character=character)
+                    self.discord_client = DiscordClient(prompt_file=self.prompt_file)
                     self.tasks.append(asyncio.create_task(self.discord_client.start(os.getenv("DISCORD_TOKEN"))))
                     logger.info("Discord user client initialized")
                 except Exception as e:
@@ -116,8 +102,12 @@ class AgentManager:
             raise
 
 def main():
+    parser = argparse.ArgumentParser(description="Run the agent with a specific prompt file.")
+    parser.add_argument("--prompt_file", type=str, help="Path to the prompt file", default=None)
+    args = parser.parse_args()
+
     try:
-        agent = AgentManager()
+        agent = AgentManager(prompt_file=args.prompt_file)
         asyncio.run(agent.start())
     except GracefulExit:
         logger.info("Shutdown complete.")

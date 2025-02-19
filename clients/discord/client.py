@@ -4,10 +4,11 @@ from core.generation import GenerationManager
 from .message_manager import DiscordMessageManager
 
 class DiscordClient(discord.Client):
-    def __init__(self, character: dict):
+    def __init__(self, prompt_file: str):
         super().__init__()
+        self.prompt_file = prompt_file
         self.message_manager = DiscordMessageManager(
-            runtime={"character": character, "prompt_file": character.get("prompt_file")}
+            runtime={"prompt_file": self.prompt_file}
         )
 
     async def on_ready(self):

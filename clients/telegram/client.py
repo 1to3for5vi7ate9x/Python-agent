@@ -7,7 +7,7 @@ import os
 from loguru import logger
 
 class TelegramUserClient:
-    def __init__(self, character: dict):
+    def __init__(self, prompt_file: str):
         # Initialize Telegram client with user credentials
         self.api_id = int(os.getenv('TELEGRAM_API_ID'))
         self.api_hash = os.getenv('TELEGRAM_API_HASH')
@@ -28,9 +28,9 @@ class TelegramUserClient:
             self.api_id,
             self.api_hash
         )
-        
+        self.prompt_file = prompt_file
         self.message_manager = TelegramMessageManager(
-            runtime={"character": character, "prompt_file": character.get("prompt_file")}
+            runtime={"prompt_file": self.prompt_file}
         )
 
     async def _resolve_allowed_chats(self):

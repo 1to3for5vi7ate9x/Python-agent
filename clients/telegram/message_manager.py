@@ -1,6 +1,9 @@
 from telethon import events
 from loguru import logger
 from core.message_handler import MessageHandler
+from telethon import events
+from loguru import logger
+from core.message_handler import MessageHandler
 import asyncio
 import json
 import os
@@ -11,6 +14,8 @@ class TelegramMessageManager:
         os.makedirs('logs', exist_ok=True)
         self.log_file = open('logs/telegram_log.json', 'a')
         self.conversations = {}  # Store conversation history: {chat_id: [messages]}
+        self.prompt_file = runtime["prompt_file"]
+        self.message_handler = MessageHandler(prompt_file=self.prompt_file, character={})
 
     async def _send_with_typing(self, event, message: str) -> None:
         """Send a message with typing animation"""

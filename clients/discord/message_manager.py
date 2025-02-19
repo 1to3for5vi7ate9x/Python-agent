@@ -15,14 +15,13 @@ class DiscordMessageManager:
         self.client = None
         self.conversations = {}  # Store conversation history: {user_id: [messages]}
         self.prompt_file = runtime["prompt_file"]
-        self.character = runtime["character"]
         self.min_messages = int(os.getenv('MIN_MESSAGES'))
         self.min_time = int(os.getenv('MIN_TIME'))
         self.minus_time = int(os.getenv('MINUS_TIME', '0'))  # Default to 0 if not set
         self.prompt_content = self.load_prompt()
         ollama_model = os.getenv("OLLAMA_MODEL")
         model_provider = os.getenv("MODEL_PROVIDER", "ollama")
-        base_url = self.character.get("baseUrl")  # Optional, only for Ollama
+        base_url = os.getenv("OLLAMA_BASE_URL")  # Optional, only for Ollama
         default_model = ollama_model
 
         self.generation_manager = GenerationManager(

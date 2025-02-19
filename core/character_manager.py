@@ -4,29 +4,43 @@ from typing import Dict, List, Optional
 from loguru import logger
 
 class CharacterManager:
-    def __init__(self, templates_dir: str = "characters/templates"):
+    def __init__(self, templates_dir: str = "characters/templates", prompt_file: str = None):
         self.templates_dir = templates_dir
         self.characters: Dict[str, Dict] = {}
-        self._load_characters()
-    
-    def _load_characters(self) -> None:
-        """Load all character templates from the templates directory"""
-        if not os.path.exists(self.templates_dir):
-            logger.error(f"Templates directory not found: {self.templates_dir}")
+        self._load_characters(prompt_file=prompt_file)
+
+    def _load_characters(self, prompt_file: str = None) -> None:
+        """Load all character templates from the templates directory or environment variables.
+        prompt_file argument overrides environment variable.
+        """
+        # Load character from environment variables if CHARACTER_NAME is set
+        try:
+            # prompt_file must be provided
+            # prompt_file must be provided
+            if not prompt_file:
+                logger.error("prompt_file must be provided")
+                return
+
+            username = os.environ.get("CHARACTER_USERNAME")
+            clients_str = os.environ.get("CHARACTER_CLIENTS")
+            if not clients_str:
+                logger.error("Missing information for character configuration. Need clients")
+                return
+            clients = clients_str.split(',')
+
+            character = {
+                "name": prompt_file,  # Use prompt_file as a unique identifier
+                "username": username,  # Keep username from environment if available
+                "clients": clients,
+                "prompt_file": prompt_file
+            }
+            self.characters[prompt_file] = character  # Use prompt_file as key
+            logger.info(f"Loaded character from prompt file: {prompt_file}")
+
+        except Exception as e:
+            logger.error(f"Error loading character: {e}")
             return
-            
-        for filename in os.listdir(self.templates_dir):
-            if filename.endswith('.json'):
-                try:
-                    filepath = os.path.join(self.templates_dir, filename)
-                    with open(filepath, 'r') as f:
-                        character = json.load(f)
-                        name = character.get('name')
-                        if name:
-                            self.characters[name] = character
-                except Exception as e:
-                    logger.error(f"Error loading character from {filename}: {e}")
-    
+
     def get_character_names(self) -> List[str]:
         """Get list of available character names"""
         return list(self.characters.keys())

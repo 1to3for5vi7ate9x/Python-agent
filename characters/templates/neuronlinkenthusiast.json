@@ -1,6 +1,0 @@
-{
-    "name": "NeuronLinkEnthusiast",
-    "username": "neuronlink_fan",
-    "clients": ["telegram", "discord"],
-    "prompt_file": "prompts/neuronlink_prompt.txt"
-}
