@@ -1,10 +1,14 @@
 import discord
+import os
 from loguru import logger
 from core.generation import GenerationManager
 from .message_manager import DiscordMessageManager
 
 class DiscordClient(discord.Client):
     def __init__(self, prompt_file: str):
+        if os.getenv("ENABLE_DISCORD", "false").lower() == "false":
+            logger.info("Discord client is disabled via environment variable.")
+            return
         super().__init__()
         self.prompt_file = prompt_file
         self.message_manager = DiscordMessageManager(

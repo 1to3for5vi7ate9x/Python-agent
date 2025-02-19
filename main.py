@@ -80,13 +80,15 @@ class AgentManager:
             else:
                 logger.info("Telegram client is disabled via environment variable.")
 
-            if os.getenv("DISCORD_TOKEN"):
+            if os.getenv("ENABLE_DISCORD", "false").lower() == "true" and os.getenv("DISCORD_TOKEN"):
                 try:
                     self.discord_client = DiscordClient(prompt_file=self.prompt_file)
                     self.tasks.append(asyncio.create_task(self.discord_client.start(os.getenv("DISCORD_TOKEN"))))
                     logger.info("Discord user client initialized")
                 except Exception as e:
                     logger.error(f"Failed to initialize Discord client: {e}")
+            else:
+                logger.info("Discord client is disabled via environment variable.")
 
             if not self.tasks:
                 logger.error("No clients were initialized successfully")
