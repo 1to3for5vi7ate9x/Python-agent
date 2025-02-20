@@ -105,7 +105,7 @@ class AgentManager:
 
 def main():
     parser = argparse.ArgumentParser(description="Run the agent with a specific prompt file.")
-    parser.add_argument("--prompt_file", type=str, help="Path to the prompt file", default=None)
+    parser.add_argument("--prompt_file", type=str, help="Path to the prompt file", default="prompts/neuronlink_prompt.txt")
     args = parser.parse_args()
 
     try:

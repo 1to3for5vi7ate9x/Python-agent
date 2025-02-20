@@ -42,6 +42,9 @@ class MessageHandler:
 
     def load_prompt(self) -> str:
         """Load the content of the prompt file."""
+        if not self.prompt_file:
+            logger.warning("Prompt file is not specified.")
+            return ""  # Return an empty string or a default prompt
         try:
             with open(self.prompt_file, 'r') as f:
                 return f.read()

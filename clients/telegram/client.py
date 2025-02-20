@@ -18,7 +18,7 @@ class TelegramUserClient:
         session_path = os.path.join('sessions', 'user_session')
         
         # Get allowed chats
-        self.allowed_groups = os.getenv('TELEGRAM_ALLOWED_GROUPS', '').split(',')
+        self.allowed_groups = os.getenv('TELEGRAM_ALLOWED_CHATS', '').split(',')
         self.allowed_groups = [g.strip() for g in self.allowed_groups if g.strip()]
         self.allowed_chat_ids = set()
         
