@@ -1,4 +1,4 @@
 python3 -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
-pyhton3 update_state.py
+python3 update_state.py
