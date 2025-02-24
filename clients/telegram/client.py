@@ -17,7 +17,7 @@ class TelegramUserClient:
         os.makedirs('sessions', exist_ok=True)
         session_path = os.path.join('sessions', 'user_session')
         
-        # Get allowed chats
+        # Get allowed chats - using share link usernames (without the t.me/ prefix)
         self.allowed_groups = os.getenv('TELEGRAM_ALLOWED_CHATS', '').split(',')
         self.allowed_groups = [g.strip() for g in self.allowed_groups if g.strip()]
         self.allowed_chat_ids = set()
@@ -36,9 +36,18 @@ class TelegramUserClient:
     async def _resolve_allowed_chats(self):
         async for dialog in self.client.iter_dialogs():
             if isinstance(dialog.entity, (Channel, Chat)):
-                if dialog.name in self.allowed_groups:
-                    self.allowed_chat_ids.add(dialog.id)
-                    logger.info(f"Found allowed chat: {dialog.name} (ID: {dialog.id})")
+                # For channels and supergroups, use username
+                if isinstance(dialog.entity, Channel):
+                    username = getattr(dialog.entity, 'username', None)
+                    if username and username in self.allowed_groups:
+                        self.allowed_chat_ids.add(dialog.id)
+                        logger.info(f"Found allowed channel: @{username} (ID: {dialog.id})")
+                # For regular group chats, use title
+                else:
+                    title = dialog.entity.title
+                    if title in self.allowed_groups:
+                        self.allowed_chat_ids.add(dialog.id)
+                        logger.info(f"Found allowed group chat: {title} (ID: {dialog.id})")
 
     async def start(self):
         await self.client.start(phone=self.phone)
